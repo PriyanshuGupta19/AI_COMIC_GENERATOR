@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create Your Comic — AI Comic Generator</title>
+
+  <!-- Fonts & Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Comic+Neue:wght@700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+  <!-- Dark Aurora Styles -->
+  <style>
+    :root{
+      --aurora-1:#002b36; /* deep teal        */
+      --aurora-2:#313186; /* indigo           */
+      --aurora-3:#712c91; /* royal purple     */
+      --aurora-4:#b14be1; /* vivid magenta    */
+      --glass-bg:rgba(255,255,255,0.10);
+    }
+    html,body{height:100%;margin:0;font-family:'Inter',sans-serif;}
+    body{
+      background:linear-gradient(130deg,var(--aurora-1)0%,var(--aurora-2)30%,var(--aurora-3)65%,var(--aurora-4)100%);
+      background-size:250% 250%;
+      animation:bgShift 22s ease-in-out infinite;
+      color:#e8e8e8;
+      display:flex;
+      align-items:flex-start;
+      justify-content:center;
+      padding:60px 12px 80px;
+    }
+    @keyframes bgShift{
+      0%,100%{background-position:0% 40%;}
+      50%{background-position:100% 60%;}
+    }
+
+    /* Error banner */
+    .error{
+      width:100%;
+      max-width:680px;
+      margin-bottom:24px;
+      padding:14px 28px;
+      background:rgba(255,67,67,0.15);
+      border:1px solid rgba(255,67,67,0.35);
+      border-radius:12px;
+      font-weight:600;
+      text-align:center;
+      color:#ff8383;
+      backdrop-filter:blur(4px);
+    }
+
+    /* Card wrapper */
+    .container{
+      width:100%;
+      max-width:980px;
+      display:grid;
+      grid-template-columns:480px 1fr;
+      gap:40px;
+    }
+    @media(max-width:960px){
+      .container{grid-template-columns:1fr;}
+    }
+
+    .card{
+      background:var(--glass-bg);
+      border:1px solid rgba(255,255,255,0.18);
+      border-radius:22px;
+      backdrop-filter:blur(18px);
+      box-shadow:0 10px 40px rgba(0,0,0,0.35);
+      padding:42px 38px 36px;
+      position:relative;
+      overflow:hidden;
+    }
+
+    /* Decorative glow */
+    .card::before{
+      content:"";
+      position:absolute;
+      inset:-2px;
+      background:linear-gradient(140deg,rgba(0,255,255,0.2),rgba(255,0,255,0.15));
+      filter:blur(60px);
+      z-index:-1;
+      opacity:0.25;
+    }
+
+    h2,h3{
+      font-family:'Comic Neue',cursive;
+      font-weight:700;
+      text-align:center;
+      margin:0 0 26px;
+      color:#ffffff;
+    }
+    h2 i,h3 i{color:var(--aurora-4);margin-right:6px;}
+
+    /* Form */
+    form{display:flex;flex-direction:column;gap:26px;}
+    label{display:block;margin-bottom:8px;font-size:1rem;font-weight:600;color:#f2f2f2;}
+    input,select{
+      width:100%;
+      padding:14px 16px;
+      border-radius:10px;
+      background:rgba(255,255,255,0.18);
+      border:2px solid rgba(255,255,255,0.25);
+      color:#f2f2f2;
+      font-size:1.05rem;
+      backdrop-filter:blur(6px);
+      transition:border .25s,box-shadow .25s;
+    }
+    input::placeholder{color:#c7c7c7;}
+    input:focus,select:focus{
+      outline:none;
+      border-color:var(--aurora-4);
+      box-shadow:0 0 0 3px rgba(177,75,225,0.4);
+    }
+    .row{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:24px;
+    }
+    @media(max-width:600px){.row{grid-template-columns:1fr;}}
+
+    .btn{
+      margin:8px auto 0;
+      padding:18px 48px;
+      border:none;
+      border-radius:80px;
+      font-family:'Comic Neue',cursive;
+      font-size:1.15rem;
+      font-weight:700;
+      color:#fff;
+      background:linear-gradient(45deg,var(--aurora-3),var(--aurora-4));
+      box-shadow:0 8px 28px rgba(177,75,225,0.25);
+      cursor:pointer;
+      transition:transform .18s,box-shadow .25s;
+      position:relative;
+      overflow:hidden;
+    }
+    .btn:hover{transform:translateY(-4px) scale(1.03);box-shadow:0 14px 46px rgba(177,75,225,0.4);}
+    .btn:active{transform:translateY(0) scale(0.98);}
+
+    /* Ripple */
+    .ripple{
+      position:absolute;
+      border-radius:50%;
+      transform:scale(0);
+      background:rgba(255,255,255,0.3);
+      animation:ripple .6s linear;
+      pointer-events:none;
+    }
+    @keyframes ripple{to{transform:scale(4);opacity:0;}}
+
+    /* How-it-works grid */
+    .how-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+      gap:22px;
+      margin-top:8px;
+    }
+    .step{text-align:center;padding:6px 4px;}
+    .step i{
+      font-size:2.4rem;
+      margin-bottom:10px;
+      background:linear-gradient(45deg,var(--aurora-4),var(--aurora-3));
+      -webkit-background-clip:text;
+      -webkit-text-fill-color:transparent;
+    }
+    .step h4{margin:0 0 6px;font-family:'Comic Neue',cursive;font-size:1.1rem;color:#fff;}
+    .step p{margin:0;color:#d2d2d2;font-size:.95rem;line-height:1.5;}
+    /* Scrollbar */
+    ::-webkit-scrollbar{width:8px;}::-webkit-scrollbar-track{background:rgba(255,255,255,0.04);}::-webkit-scrollbar-thumb{background:linear-gradient(45deg,var(--aurora-2),var(--aurora-4));border-radius:4px;}
+    /* ==== SELECT (drop-down) styling ==== */
+select{
+  /* layout */
+  width:100%;
+  padding:14px 48px 14px 16px;   /* space on right for custom arrow */
+  border-radius:10px;
+  font-size:1.05rem;
+  font-family:inherit;
+  /* colors & glass */
+  background:
+      linear-gradient(135deg,rgba(255,255,255,0.05),rgba(255,255,255,0)) padding-box,
+      linear-gradient(135deg,rgba(177,75,225,0.28),rgba(49,49,134,0.28)) border-box;
+  backdrop-filter:blur(8px);
+  border:2px solid transparent; /* handled by border-image */
+  color:#f2f2f2;
+  appearance:none;              /* remove native arrow */
+  position:relative;
+  cursor:pointer;
+  transition:box-shadow .25s,border-color .25s;
+}
+/* custom chevron */
+select:after{
+  content:"\f078";              /* Font Awesome chevron-down */
+  font-family:"Font Awesome 6 Free";
+  font-weight:900;
+}
+select::-ms-expand{display:none;} /* hide arrow on IE */
+
+select:hover{
+  box-shadow:0 0 0 3px rgba(177,75,225,0.25);
+}
+select:focus{
+  outline:none;
+  box-shadow:0 0 0 3px rgba(177,75,225,0.45);
+}
+
+/* option contrast in the drop list */
+select option{
+  color:#000;
+  background:#e8e8e8;
+}
+
+/* ===== Comic Topic input (text) - ALIGNMENT FIX ===== */
+input[type="text"]{
+  width:100%;
+  padding:14px 16px;  /* Match select padding exactly */
+  font-size:1.05rem;
+  font-family:inherit;
+  border-radius:10px;
+  box-sizing:border-box;  /* Ensure consistent box model */
+
+  /* glass background & subtle inset shadow */
+  background:
+      linear-gradient(135deg,rgba(255,255,255,0.06),rgba(255,255,255,0.02)) padding-box,
+      linear-gradient(135deg,rgba(49,49,134,0.35),rgba(177,75,225,0.35)) border-box;
+  border:2px solid transparent;
+  backdrop-filter:blur(8px);
+
+  /* text & placeholder */
+  color:#f2f2f2;
+  caret-color:var(--aurora-4);
+  transition:border .25s,box-shadow .25s;
+}
+
+/* darker placeholder for readability */
+input[type="text"]::placeholder{
+  color:#b8b8b8;
+  opacity:.9;
+}
+
+/* hover / focus states */
+input[type="text"]:hover{
+  box-shadow:0 0 0 3px rgba(177,75,225,.25);
+}
+input[type="text"]:focus{
+  outline:none;
+  box-shadow:0 0 0 3px rgba(177,75,225,.45);
+}
+
+  </style>
+</head>
+<body>
+
+  <% if (typeof error !== 'undefined') { %>
+    <div class="error"><i class="fas fa-exclamation-triangle"></i> <%= error %></div>
+  <% } %>
+
+  <div class="container">
+
+    <!-- Comic Form -->
+    <div class="card">
+      <h2><i class="fas fa-pen-fancy"></i> Create Your Comic</h2>
+      <form action="/generate" method="POST">
+        <div>
+          <label for="topic"><i class="fas fa-lightbulb"></i> Comic Topic</label>
+          <input id="topic" name="topic" type="text" placeholder="e.g. Pirates searching for cosmic treasure..." required>
+        </div>
+
+        <div class="row">
+          <div>
+            <label for="genre"><i class="fas fa-theater-masks"></i> Genre</label>
+            <select id="genre" name="genre">
+              <option value="adventure">Adventure</option>
+              <option value="superhero">Superhero</option>
+              <option value="fantasy">Fantasy</option>
+              <option value="sci-fi">Sci-Fi</option>
+              <option value="comedy">Comedy</option>
+              <option value="romance">Romance</option>
+              <option value="horror">Horror</option>
+              <option value="mystery">Mystery</option>
+            </select>
+          </div>
+          <div>
+            <label for="panels"><i class="fas fa-th-large"></i> Panels</label>
+            <select id="panels" name="panels">
+              <option value="4">4</option>
+              <option value="6" selected>6</option>
+              <option value="8">8</option>
+              <option value="10">10</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label for="style"><i class="fas fa-palette"></i> Art Style</label>
+          <select id="style" name="style">
+            <option value="modern comic book" selected>Modern Comic Book</option>
+            <option value="manga">Manga</option>
+            <option value="classic comic">Classic Comic</option>
+            <option value="cartoon">Cartoon</option>
+            <option value="realistic">Realistic</option>
+            <option value="anime">Anime</option>
+            <option value="dark gothic">Dark Gothic</option>
+            <option value="watercolor">Watercolor</option>
+          </select>
+        </div>
+
+        <button class="btn" type="submit"><i class="fas fa-magic"></i> Generate Comic</button>
+      </form>
+    </div>
+
+    <!-- How it Works -->
+    <div class="card">
+      <h3><i class="fas fa-info-circle"></i> How It Works</h3>
+      <div class="how-grid">
+        <div class="step">
+          <i class="fas fa-edit"></i>
+          <h4>1. Describe</h4>
+          <p>Enter your idea and choose style & genre.</p>
+        </div>
+        <div class="step">
+          <i class="fas fa-robot"></i>
+          <h4>2. AI Writes</h4>
+          <p>We craft plot, characters & dialogue.</p>
+        </div>
+        <div class="step">
+          <i class="fas fa-image"></i>
+          <h4>3. AI Draws</h4>
+          <p>High-res art for every panel.</p>
+        </div>
+        <div class="step">
+          <i class="fas fa-download"></i>
+          <h4>4. Enjoy</h4>
+          <p>View, share or download instantly.</p>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Ripple JS -->
+  <script>
+    document.querySelectorAll('.btn').forEach(btn=>{
+      btn.addEventListener('click',e=>{
+        const r=document.createElement('span');
+        const d=Math.max(btn.clientWidth,btn.clientHeight);
+        r.style.width=r.style.height=d+'px';
+        r.style.left=e.clientX-btn.getBoundingClientRect().left-d/2+'px';
+        r.style.top=e.clientY-btn.getBoundingClientRect().top-d/2+'px';
+        r.classList.add('ripple');
+        btn.appendChild(r);
+        setTimeout(()=>r.remove(),600);
+      });
+    });
+  </script>
+</body>
+</html>

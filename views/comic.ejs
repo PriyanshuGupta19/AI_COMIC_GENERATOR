@@ -1,0 +1,519 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= comic.story.title %> — Comic Viewer</title>
+
+  <!-- Fonts & Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Comic+Neue:wght@700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+<style>
+  :root {
+    --aurora-1: #002b36;  /* deep teal */
+    --aurora-2: #313186;  /* indigo */
+    --aurora-3: #712c91;  /* royal purple */
+    --aurora-4: #b14be1;  /* vivid magenta */
+    --glass-bg: rgba(255,255,255,0.10);
+  }
+
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  html, body {
+    height: 100%;
+    overflow: hidden;
+    font-family: 'Inter', sans-serif;
+  }
+
+  body {
+    background: linear-gradient(130deg, var(--aurora-1) 0%, var(--aurora-2) 30%, var(--aurora-3) 65%, var(--aurora-4) 100%);
+    background-size: 250% 250%;
+    animation: bgShift 22s ease-in-out infinite;
+  }
+
+  @keyframes bgShift {
+    0%, 100% { background-position: 0% 40%; }
+    50% { background-position: 100% 60%; }
+  }
+
+  /* Comic Container - Horizontal Scroll */
+  .comic-container {
+    height: 100vh;
+    display: flex;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-behavior: smooth;
+    scroll-snap-type: x mandatory;
+  }
+
+  /* Hide scrollbar but keep functionality */
+  .comic-container::-webkit-scrollbar {
+    display: none;
+  }
+  .comic-container {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  /* Title Page */
+  .title-page {
+    min-width: 100vw;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    scroll-snap-align: start;
+    position: relative;
+    padding: 40px;
+    text-align: center;
+  }
+
+  .title-content {
+    background: var(--glass-bg);
+    backdrop-filter: blur(18px);
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 22px;
+    padding: 60px 40px;
+    max-width: 600px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.35);
+  }
+
+  .title-content h1 {
+    font-family: 'Comic Neue', cursive;
+    font-size: clamp(2.5rem, 5vw, 4rem);
+    color: #fff;
+    margin-bottom: 20px;
+    text-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  }
+
+  .title-content p {
+    color: rgba(255,255,255,0.9);
+    font-size: clamp(1.1rem, 2.5vw, 1.4rem);
+    line-height: 1.6;
+    margin-bottom: 30px;
+  }
+
+  .characters-list {
+    background: rgba(255,255,255,0.05);
+    border-radius: 15px;
+    padding: 25px;
+    margin-top: 30px;
+  }
+
+  .characters-list h3 {
+    color: var(--aurora-4);
+    font-family: 'Comic Neue', cursive;
+    margin-bottom: 15px;
+    font-size: 1.3rem;
+  }
+
+  .character-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+  }
+
+  .character {
+    background: rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 15px;
+    border: 1px solid rgba(255,255,255,0.1);
+  }
+
+  .character strong {
+    color: #fff;
+    display: block;
+    margin-bottom: 5px;
+  }
+
+  .character p {
+    color: rgba(255,255,255,0.7);
+    font-size: 0.9rem;
+    line-height: 1.4;
+  }
+
+  /* ========== LANDSCAPE PANEL LAYOUT ========== */
+  .panel-page {
+    min-width: 100vw;
+    height: 100vh;
+    scroll-snap-align: start;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px;
+    position: relative;
+  }
+
+  .panel-content {
+    width: 100%;
+    max-width: 1200px;
+    height: 100%;
+    max-height: 80vh;
+    background: var(--glass-bg);
+    backdrop-filter: blur(18px);
+    border: 3px solid rgba(255,255,255,0.2);
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 15px 50px rgba(0,0,0,0.4);
+    display: flex;
+    flex-direction: row;  /* landscape layout */
+    padding-top: 60px; /* Space for header */
+  }
+
+  .panel-header {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: linear-gradient(45deg, var(--aurora-3), var(--aurora-4));
+    color: white;
+    padding: 15px 20px;
+    text-align: center;
+    font-family: 'Comic Neue', cursive;
+    font-size: 1.2rem;
+    font-weight: 700;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    z-index: 10;
+  }
+
+  .panel-image-container {
+    flex: 0 0 55%;  /* 55% width for image */
+    max-width: 55%;
+    position: relative;
+    background: #000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-right: 3px solid rgba(255,255,255,.15);
+  }
+
+  .panel-image {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 8px;
+  }
+
+  .image-error {
+    color: rgba(255,255,255,0.7);
+    font-size: 1.1rem;
+    text-align: center;
+  }
+
+  .panel-info {
+    flex: 1;  /* takes remaining 45% */
+    background: rgba(0,0,0,.82);
+    color: white;
+    padding: 26px 24px;
+    backdrop-filter: blur(10px);
+    overflow-y: auto;
+  }
+
+  .panel-info p {
+    margin-bottom: 15px;
+    font-size: 1rem;
+    line-height: 1.5;
+  }
+
+  .panel-info strong {
+    color: var(--aurora-4);
+    font-weight: 600;
+  }
+
+  .dialogue-bubble {
+    background: linear-gradient(135deg, #fff, #f8f9fa);
+    color: #333;
+    border-radius: 15px;
+    padding: 20px;
+    margin-top: 20px;
+    border-left: 4px solid var(--aurora-4);
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    position: relative;
+    font-size: 1.1rem;
+    line-height: 1.4;
+  }
+
+  .dialogue-bubble::before {
+    content: '"';
+    font-size: 2rem;
+    color: var(--aurora-4);
+    position: absolute;
+    top: -5px;
+    left: 10px;
+  }
+
+  .dialogue-bubble::after {
+    content: '"';
+    font-size: 2rem;
+    color: var(--aurora-4);
+    position: absolute;
+    bottom: -15px;
+    right: 15px;
+  }
+
+  /* Navigation Controls */
+  .nav-controls {
+    position: fixed;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 15px;
+    z-index: 1000;
+  }
+
+  .nav-btn {
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 50px;
+    padding: 12px 20px;
+    color: white;
+    text-decoration: none;
+    font-family: 'Comic Neue', cursive;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+  }
+
+  .nav-btn:hover {
+    background: linear-gradient(45deg, var(--aurora-3), var(--aurora-4));
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(177,75,225,0.4);
+  }
+
+  /* Page Indicator */
+  .page-indicator {
+    position: fixed;
+    top: 30px;
+    right: 30px;
+    background: var(--glass-bg);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 25px;
+    padding: 10px 20px;
+    color: white;
+    font-family: 'Comic Neue', cursive;
+    font-weight: 600;
+    z-index: 1000;
+  }
+
+  /* Progress Bar */
+  .progress-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--aurora-1), var(--aurora-2), var(--aurora-3), var(--aurora-4));
+    transform-origin: left;
+    z-index: 1000;
+    transition: transform 0.3s ease;
+  }
+
+  /* Mobile Optimizations */
+  @media (max-width: 900px) {
+    .panel-content {
+      flex-direction: column;
+    }
+    
+    .panel-image-container {
+      max-width: 100%;
+      border-right: none;
+      border-bottom: 3px solid rgba(255,255,255,.15);
+      flex: 0 0 60%;
+    }
+    
+    .panel-page {
+      padding: 20px;
+    }
+    
+    .title-content {
+      padding: 40px 20px;
+    }
+    
+    .nav-controls {
+      bottom: 20px;
+      gap: 10px;
+    }
+    
+    .nav-btn {
+      padding: 10px 16px;
+      font-size: 0.9rem;
+    }
+  }
+</style>
+
+</head>
+<body>
+  <!-- Progress Bar -->
+  <div class="progress-bar" id="progressBar"></div>
+
+  <!-- Page Indicator -->
+  <div class="page-indicator" id="pageIndicator">
+    Page 1 of <span id="totalPages"></span>
+  </div>
+
+  <!-- Comic Container -->
+  <div class="comic-container" id="comicContainer">
+    
+    <!-- Title Page -->
+    <div class="title-page">
+      <div class="title-content">
+        <h1><%= comic.story.title %></h1>
+        <p><%= comic.story.summary %></p>
+        
+        <% if (comic.story.characters && comic.story.characters.length > 0) { %>
+        <div class="characters-list">
+          <h3><i class="fas fa-users"></i> Characters</h3>
+          <div class="character-grid">
+            <% comic.story.characters.forEach(character => { %>
+            <div class="character">
+              <strong><%= character.name %></strong>
+              <small>(<%= character.role %>)</small>
+              <p><%= character.description %></p>
+            </div>
+            <% }); %>
+          </div>
+        </div>
+        <% } %>
+      </div>
+    </div>
+
+    <!-- Comic Panels -->
+    <% if (comic.images && comic.images.panels) { %>
+      <% comic.images.panels.forEach(panel => { %>
+      <div class="panel-page">
+        <div class="panel-content" role="group" aria-label="Comic panel">
+          <div class="panel-header">
+            Panel <%= panel.panelNumber %>
+          </div>
+          
+          <div class="panel-image-container">
+            <% if (panel.imagePath) { %>
+            <img 
+              src="<%= panel.imagePath %>" 
+              alt="Panel <%= panel.panelNumber %>"
+              class="panel-image"
+            >
+            <% } else { %>
+            <div class="image-error">
+              <i class="fas fa-exclamation-triangle"></i><br>
+              Image generation failed
+            </div>
+            <% } %>
+          </div>
+          
+          <div class="panel-info">
+            <p><strong>Setting:</strong> <%= panel.setting %></p>
+            <p><strong>Action:</strong> <%= panel.action %></p>
+            
+            <% if (panel.dialogue) { %>
+            <div class="dialogue-bubble">
+              <%= panel.dialogue %>
+            </div>
+            <% } %>
+          </div>
+        </div>
+      </div>
+      <% }); %>
+    <% } %>
+  </div>
+
+  <!-- Navigation Controls -->
+  <div class="nav-controls">
+    <a href="/create" class="nav-btn">
+      <i class="fas fa-plus"></i> Create New
+    </a>
+    <a href="/gallery" class="nav-btn">
+      <i class="fas fa-images"></i> Gallery
+    </a>
+    <a href="/" class="nav-btn">
+      <i class="fas fa-home"></i> Home
+    </a>
+  </div>
+
+  <script>
+    const container = document.getElementById('comicContainer');
+    const progressBar = document.getElementById('progressBar');
+    const pageIndicator = document.getElementById('pageIndicator');
+    const totalPagesSpan = document.getElementById('totalPages');
+    
+    // Calculate total pages
+    const totalPages = container.children.length;
+    totalPagesSpan.textContent = totalPages;
+    
+    let currentPage = 1;
+
+    // Update progress and page indicator
+    function updateProgress() {
+      const scrollLeft = container.scrollLeft;
+      const maxScroll = container.scrollWidth - container.clientWidth;
+      const progress = (scrollLeft / maxScroll) * 100;
+      
+      progressBar.style.transform = `scaleX(${progress / 100})`;
+      
+      // Calculate current page
+      const pageWidth = container.clientWidth;
+      currentPage = Math.floor(scrollLeft / pageWidth) + 1;
+      pageIndicator.innerHTML = `Page ${currentPage} of <span id="totalPages">${totalPages}</span>`;
+    }
+
+    // Handle scroll events
+    container.addEventListener('scroll', updateProgress);
+
+    // Keyboard navigation
+    document.addEventListener('keydown', (e) => {
+      const pageWidth = container.clientWidth;
+      
+      if (e.key === 'ArrowRight' || e.key === ' ') {
+        e.preventDefault();
+        container.scrollBy({ left: pageWidth, behavior: 'smooth' });
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        container.scrollBy({ left: -pageWidth, behavior: 'smooth' });
+      }
+    });
+
+    // Touch/swipe support for mobile
+    let startX = 0;
+    let scrollStart = 0;
+
+    container.addEventListener('touchstart', (e) => {
+      startX = e.touches[0].clientX;
+      scrollStart = container.scrollLeft;
+    });
+
+    container.addEventListener('touchmove', (e) => {
+      if (!startX) return;
+      
+      const currentX = e.touches[0].clientX;
+      const diff = startX - currentX;
+      container.scrollLeft = scrollStart + diff;
+    });
+
+    container.addEventListener('touchend', () => {
+      startX = 0;
+      scrollStart = 0;
+      
+      // Snap to nearest page
+      const pageWidth = container.clientWidth;
+      const currentScroll = container.scrollLeft;
+      const nearestPage = Math.round(currentScroll / pageWidth);
+      
+      container.scrollTo({
+        left: nearestPage * pageWidth,
+        behavior: 'smooth'
+      });
+    });
+
+    // Initialize
+    updateProgress();
+  </script>
+</body>
+</html>
